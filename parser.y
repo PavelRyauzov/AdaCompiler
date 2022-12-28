@@ -198,11 +198,11 @@ variable_list : ID
 			  | variable_list ',' ID  
 			  ;
 
-variable_type : INTEGER	 
-			  | FLOAT  		
-			  | STRING  
-			  | CHARACTER  
-			  | BOOLEAN	 
+variable_type : INTEGER    {$$ = VT_INTEGER;}
+			  | FLOAT      {$$ = VT_FLOAT;}	
+			  | STRING     {$$ = VT_STRING;}
+			  | CHARACTER  {$$ = VT_CHARACTER;}
+			  | BOOLEAN	   {$$ = VT_BOOLEAN;}
 			  ;
 
 while_statement : WHILE expression LOOP statement_list END LOOP ';'	 
@@ -294,6 +294,8 @@ void yyerror(const char* s) {
 	exit(1);
 }
 
+// ------------------------------  Expression ------------------------------ 
+
 Expression *createExpression(ExprType type, Expression *left, Expression *right)
 {
 	Expression *result = (Expression *)malloc(sizeof(Expression));
@@ -338,3 +340,16 @@ Expression *createExpressionWithList(ExprType type, Value value, ExpressionList 
 
 	return result;
 }
+
+// ------------------------------  rule ------------------------------ 
+
+
+// ------------------------------  rule ------------------------------ 
+
+
+// ------------------------------  rule ------------------------------ 
+
+
+// ------------------------------  rule ------------------------------ 
+
+// ------------------------------  rule ------------------------------ 
