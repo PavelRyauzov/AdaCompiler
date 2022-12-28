@@ -31,7 +31,6 @@ typedef struct Expression Expression;
 
 union Value
 {
-
 	int int_val;
 	float float_val;
 	char char_val;

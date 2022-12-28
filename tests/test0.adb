@@ -1,5 +1,5 @@
 procedure Hello is
-
+	
 begin
-    null;
+    I := 5+12;
 end Hello;

@@ -11,6 +11,13 @@ extern FILE* yyin;
 void yyerror(const char* s);
 
 ProgramList *root;
+
+// ----- declarations -----
+Expression *createExpression(ExprType type, Expression *left, Expression *right);
+Expression *createSimpleExpression(ExprType type, Value val);
+Expression *createExpressionWithList(ExprType type, Value val, ExpressionList *exprList);
+
+
 %}
 
 %union { 
@@ -233,32 +240,32 @@ assigment_statement : expression ASSIGNMENT expression ';'
 empty_statement : NIL ';'  
 				;
 
-expression : expression '+' expression 
-		   | expression '-' expression	 
-		   | expression '*' expression	 
-	       | expression '/' expression	 
-		   | expression '&' expression	 
-		   | '+' expression %prec UPLUS	 
-		   | '-' expression %prec UMINUS  
-		   | NOT expression  
-		   | expression '<' expression  
-		   | expression '>' expression  
-		   | expression LESSER_EQUAL expression	 
-		   | expression GREATER_EQUAL expression  	
-		   | expression '=' expression  
-	       | expression NOT_EQUAL expression  
-		   | expression OR expression  
-		   | expression AND expression  
-		   | ID '(' expression_list ')'	 
-		   | '(' expression ')'	 
-		   | expression '[' expression ']'	 
-		   | CONST_INTEGER	 
-		   | CONST_FLOAT  
-		   | CONST_STRING	
-		   | CONST_CHARACTER	 
-		   | CONST_BOOL		 
-		   | ID				 
-		   | ID '\'' LENGTH	 
+expression : expression '+' expression {$$ = createExpression(ET_PLUS, $1, $3); }
+		   | expression '-' expression {$$ = createExpression(ET_MINUS, $1, $3); }
+		   | expression '*' expression {$$ = createExpression(ET_MULT, $1, $3);}
+	       | expression '/' expression {$$ = createExpression(ET_DIV, $1, $3);}
+		   | expression '&' expression {$$ = createExpression(ET_CONCAT, $1, $3);}
+		   | '+' expression %prec UPLUS	{$$ = createExpression(ET_PLUS, NULL, $2);}
+		   | '-' expression %prec UMINUS {$$ = createExpression(ET_MINUS, NULL, $2);}
+		   | NOT expression {$$ = createExpression(ET_NOT, NULL, $2);}
+		   | expression '<' expression {$$ = createExpression(ET_LESSER, $1, $3);}
+		   | expression '>' expression {$$ = createExpression(ET_GREATER, $1, $3);}
+		   | expression LESSER_EQUAL expression	{$$ = createExpression(ET_LESSER_EQUAL, $1, $3);} 
+		   | expression GREATER_EQUAL expression {$$ = createExpression(ET_GREATER_EQUAL, $1, $3);}
+		   | expression '=' expression {$$ = createExpression(ET_EQUAL, $1, $3);}
+	       | expression NOT_EQUAL expression {$$ = createExpression(ET_NOT_EQUAL, $1, $3);}
+		   | expression OR expression {$$ = createExpression(ET_LOGIC_OR, $1, $3);}
+		   | expression AND expression {$$ = createExpression(ET_LOGIC_AND, $1, $3);}
+		   | ID '(' expression_list ')' {$$ = createExpressionWithList(ET_ARRAY_OR_FUNC, (Value){.string_val=$1}, $3);}
+		   | '(' expression ')'	 {$$ = $2;}
+		   | expression '[' expression ']' {$$ = createExpression(ET_INDEXER, $1, $3);}
+		   | CONST_INTEGER {$$ = createSimpleExpression(ET_INTEGER, (Value){.int_val = $1});}
+		   | CONST_FLOAT  {$$ = createSimpleExpression(ET_FLOAT, (Value){.float_val=$1});}
+		   | CONST_STRING {$$ = createSimpleExpression(ET_STRING, (Value){.string_val=$1});}
+		   | CONST_CHARACTER {$$ = createSimpleExpression(ET_CHARACTER, (Value){.char_val=$1});}
+		   | CONST_BOOL	{$$ = createSimpleExpression(ET_BOOL, (Value){.int_val=$1});}	 
+		   | ID	{$$ = createSimpleExpression(ET_ID, (Value){.string_val=$1});}
+		   | ID '\'' LENGTH {$$ = createSimpleExpression(ET_LENGTH_ARR_ATTR, (Value){.string_val=$1});}
 		   ;
 
 expression_list : 	/* empty */  	
@@ -287,3 +294,47 @@ void yyerror(const char* s) {
 	exit(1);
 }
 
+Expression *createExpression(ExprType type, Expression *left, Expression *right)
+{
+	Expression *result = (Expression *)malloc(sizeof(Expression));
+
+	result->type = type;
+
+	result->left = left;
+	result->right = right;
+
+	result->exprList = NULL;
+	result->nextInList = NULL;
+
+	return result;
+}
+
+Expression *createSimpleExpression(ExprType type, Value value)
+{
+	Expression *result = (Expression *)malloc(sizeof(Expression));
+
+	result->type = type;
+	result->value = value;
+
+	result->exprList = NULL;
+	result->right = NULL;
+	result->left = NULL;
+	result->nextInList = NULL;
+
+	return result;
+}
+
+Expression *createExpressionWithList(ExprType type, Value value, ExpressionList *exprList)
+{
+	Expression *result = (Expression *)malloc(sizeof(Expression));
+
+	result->type = type;
+	result->value = value;
+	result->exprList = exprList;
+
+	result->right = NULL;
+	result->left = NULL;
+	result->nextInList = NULL;
+
+	return result;
+}

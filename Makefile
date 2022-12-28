@@ -11,3 +11,6 @@ parser: lex.yy.c parser.tab.c parser.tab.h
 
 clean:
 	rm  parser.tab.c lex.yy.c parser.tab.h parser.output
+
+build:
+	./parser ./tests/test0.adb  
