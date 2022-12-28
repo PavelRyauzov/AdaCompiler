@@ -94,6 +94,7 @@ enum VarType
 	VT_STRING,
 	VT_CHARACTER,
 	VT_ARRAY,
+	VT_VOID
 };
 
 enum DeclarationType

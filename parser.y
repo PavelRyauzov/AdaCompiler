@@ -222,7 +222,7 @@ type_declaration : TYPE ID IS ARRAY '(' range ')' OF variable_type  {$$ = create
 				 ;
 
 function_return_type : variable_type  {$$ = createFuncReturnType(0, $1);}
-					 | ID  {$$ = createFuncReturnType($1, 0);}
+					 | ID  {$$ = createFuncReturnType($1, VT_VOID);}
 					 ;
 
 variable_list : ID {$$ = createVariableList($1);}
@@ -630,7 +630,7 @@ FuncReturnType *createFuncReturnType(char *typeId, VarType varType)
 	result->isType = typeId != 0;
 	result->typeId = typeId;
 
-	result->isVarType = varType != 0;
+	result->isVarType = varType != VT_VOID;
 	result->varType=varType;
 
 	return result;

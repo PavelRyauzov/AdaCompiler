@@ -22,7 +22,7 @@ TreeUnit *newTreeUnit(int parentNum, const char *label, const char *edgeLabel)
 
 void addTreeUnit(Tree *tree, TreeUnit *element)
 {
-    if(tree!=NULL && element!=NULL )
+    if(tree!=NULL && element!=NULL)
     {
         if(tree->begin==NULL)
         {
@@ -109,7 +109,10 @@ void printTree(ProgramList *pr)
         tree->begin = NULL;
         tree->end = NULL;
 
-        programParse(pr->end, tree, 0);
+		addTreeUnit(tree, newTreeUnit(0,"Program", ""));
+		int rootNode = tree->end->num;
+
+        programParse(pr->end, tree, rootNode);
 
 		printf("digraph Program {\n");
 
@@ -146,119 +149,393 @@ void programParse(ProgramBlock *prog, Tree *tree, int parentNum)
     {
         //main title
         addTreeUnit(tree, newTreeUnit(parentNum,prog->id,"Function"));
-		// int currentIter = tree->end->num;
+		int currentIter = tree->end->num;
 
         // //parts of program
-        // if(prog->declarationSection!=NULL)
-        // {
-        //     parseDeclarationStatementList(prog->declarationSection,tree,currentIter);
-        // }
+        if(prog->declarationSection!=NULL)
+        {
+            parseDeclarationStatementList(prog->declarationSection,tree,currentIter);
+        }
 
-        // if(prog->performSection!=NULL)
-        // {
-        //     parseStatementList(prog->performSection,tree,currentIter);
-        // }
+        if(prog->performSection!=NULL)
+        {
+            parseStatementList(prog->performSection,tree,currentIter);
+        }
 
-        // if(prog->funcArgs!=NULL)
-        // {
-		// 	parseVariableDeclarationList(prog->funcArgs,tree,currentIter);
-        // }
+        if(prog->funcArgs!=NULL)
+        {
+			parseVariableDeclarationList(prog->funcArgs,tree,currentIter);
+        }
 
         // //type of function
-        // parseFuncReturnType(prog->returnType,tree,currentIter);
+        parseFuncReturnType(prog->returnType,tree,currentIter);
     }
 }
 
-// void parseFuncReturnType(FuncReturnType *frt, Tree *tree, int parentNum)
-// {
-//     addTreeUnit(tree, newTreeUnit(parentNum, "Return type", ""));
-//     int currentIter = tree->end->num;
+void parseFuncReturnType(FuncReturnType *frt, Tree *tree, int parentNum)
+{
+    addTreeUnit(tree, newTreeUnit(parentNum, "Return type", ""));
+    int currentIter = tree->end->num;
 
-//     if (frt!=0 ) {
-//         if (frt->isType) 
-//         {
-//             addTreeUnit(tree, newTreeUnit(currentIter, frt->typeId, ""));
-//         }
-//         else if (frt->isVarType)
-//         {
-//             addTreeUnit(tree, newTreeUnit(currentIter, variable_type_str(frt->varType), ""));
-//         }
-//     } 
-//     else {
-//         addTreeUnit(tree, newTreeUnit(currentIter, "void", ""));
-//     }
-// }
+    if (frt!=NULL) {
+        if (frt->isType) 
+        {
+            addTreeUnit(tree, newTreeUnit(currentIter, frt->typeId, ""));
+        }
+        else if (frt->isVarType)
+        {
+            addTreeUnit(tree, newTreeUnit(currentIter, variable_type_str(frt->varType), ""));
+        }
+    } 
+    else {
+        addTreeUnit(tree, newTreeUnit(currentIter, "void", ""));
+    }
+}
 
-// void parseDeclarationStatementList(DeclarationStatementList *declStmtList, Tree *tree, int parentNum)
-// {
-// 	addTreeUnit(tree, newTreeUnit(parentNum,"DeclarationStatementList",""));
-// 	int currentIter = tree->end->num;
+// ------------------------------  Expression ------------------------------ 
 
-//     if(declStmtList!=NULL)
-//     {
-// 		DeclarationStatement *ds = declStmtList->begin;
-//         for(; ds!=NULL; ds = ds->nextInList)
-//         {
-//             parseDeclarationStatement(ds,tree,currentIter);
-//         }
-//     }
-// }
 
-// void parseDeclarationStatement(DeclarationStatement *declStmt, Tree *tree, int parentNum)
-// {
-// 	addTreeUnit(tree, newTreeUnit(parentNum,"DeclarationStatement",""));
-// 	int currentIter = tree->end->num;
+void parseExpression(Expression *expr, Tree *tree, int parentNum)
+{
+	if(expr!=NULL)
+	{
+		addTreeUnit(tree, newTreeUnit(parentNum,expr_type_str(expr->type),"Expression"));
+		int currentIter = tree->end->num;
 
-// 	if(declStmt!=NULL)
-// 	{
-// 		switch(declStmt->type)
-// 		{
-// 			case DT_FUNCTION:
-// 				programParse(prog->stmt.declStmt, tree, currentIter);
-// 			break;
+		char buf[51];
+		switch(expr->type)
+		{
+			case ET_INTEGER :
+			case ET_BOOL:
 
-// 			case DT_VARIABLE:
-// 				parseVariableDeclaration(declStmt->stmt.varDecl, tree, currentIter);
-// 			break;
-// 		}
-// 	}
-// }
+                sprintf(buf, "%d", expr->value.int_val);
 
-// void parseVariableDeclarationList(VariableDeclarationList *varDeclList, Tree *tree, int parentNum)
-// {
-// 	if(varDeclList!=NULL)
-//     {
-// 		addTreeUnit(tree, newTreeUnit(parentNum,"VariableDeclarationList",""));
-// 		int currentIter = tree->end->num;
+				addTreeUnit(tree, newTreeUnit(currentIter,buf,expr_type_str(expr->type)));
+			break;
 
-// 		VariableDeclaration *ds = varDeclList->begin;
-// 		for(; ds!=NULL; ds = ds->nextInList)
-//         {
-// 			parseVariableDeclaration(ds, tree, currentIter);
-//         }
-//     }
-// }
+			case ET_FLOAT:
 
-// void parseVariableDeclaration(VariableDeclaration *varDecl, Tree *tree, int parentNum)
-// {
-//     if(varDecl!=NULL)
-//     {
-// 		addTreeUnit(tree, newTreeUnit(parentNum,"VariableDeclaration",""));
-// 		int currentIter = tree->end->num;
+				sprintf(buf, "%f", expr->value.float_val);
 
-// 		addTreeUnit(tree, newTreeUnit(currentIter,variable_type_str(varDecl->type),""));
+				addTreeUnit(tree, newTreeUnit(currentIter,buf,"float"));
+			break;
 
-//         if(varDecl->isArray)
-//         {
-// 			addTreeUnit(tree, newTreeUnit(currentIter,"Array",""));
+			case ET_STRING:
+			case ET_ID:
+			case ET_LENGTH_ARR_ATTR:
 
-//             parseRange(varDecl->range, tree, currentIter);
-//         }
+				addTreeUnit(tree,
+							newTreeUnit(currentIter,expr->value.string_val,expr_type_str(expr->type)));
+			break;
 
-// 		if(varDecl->varList!=NULL)
-// 		{
-// 			parseVariableList(varDecl->varList, tree, currentIter);
-// 		}
-//     }
-// }
+			case ET_ARRAY_OR_FUNC:
+				addTreeUnit(tree, newTreeUnit(currentIter,expr->value.string_val,expr_type_str(expr->type)));
+				parseExpressionList(expr->exprList, tree, currentIter);
+
+			break;
+
+			case ET_CHARACTER:
+				buf[0]=expr->value.char_val;buf[1]='\0';
+				addTreeUnit(tree, newTreeUnit(currentIter,buf,"character"));
+			break;
+
+			default:
+
+				if(expr->left!=NULL){
+					parseExpression(expr->left, tree, currentIter);
+				}
+
+				if(expr->right!=NULL){
+					parseExpression(expr->right, tree, currentIter);
+				}
+		}
+
+		//if(prog->exprList!=NULL)
+		//{
+		//	parseExpressionList(prog->exprList, tree, currentIter);
+		//}
+	}
+} 
+
+void parseExpressionList(ExpressionList *exprList, Tree *tree, int parentNum)
+{
+    if(exprList!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"ExpressionList",""));
+		int currentIter = tree->end->num;
+
+		Expression *ds = exprList->begin;
+		for(; ds!=NULL; ds = ds->nextInList)
+        {
+            parseExpression(ds,tree,currentIter);
+        }
+    }
+}
+
+// ------------------------------  Statement ------------------------------ 
+
+void parseStatement(Statement *stmt, Tree *tree, int parentNum)
+{
+	if(stmt!=NULL)
+	{
+		addTreeUnit(tree, newTreeUnit(parentNum,stmt_type_str(stmt->type),"Statement"));
+		int currentIter = tree->end->num;
+
+		switch(stmt->type)
+		{
+			case ST_CALL_FUNC:
+				parseExpression(stmt->stmtValue.exprStmt,tree,currentIter);
+			break;
+
+			case ST_RETURN:
+				parseExpression(stmt->stmtValue.exprStmt,tree,currentIter);
+			break;
+
+			case ST_NULL:
+				addTreeUnit(tree, newTreeUnit(currentIter,"NULL",""));
+			break;
+
+			case ST_WHILE:
+				parseWhileStatement(stmt->stmtValue.whileStmt,tree,currentIter);
+			break;
+
+			case ST_FOR:
+				parseForStatement(stmt->stmtValue.forStmt, tree, currentIter);
+			break;
+
+			case ST_IF:
+				parseIfStatement(stmt->stmtValue.ifStmt, tree, currentIter);
+			break;
+
+			case ST_ASSIGN:
+				parseExpression(stmt->stmtValue.assignStmt->left,tree,currentIter);
+				parseExpression(stmt->stmtValue.assignStmt->right,tree,currentIter);
+			break;
+		}
+	}
+}
+
+void parseWhileStatement(WhileStatement *whileStmt, Tree *tree, int parentNum)
+{
+    if(whileStmt!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"WhileStatement",""));
+		int currentIter = tree->end->num;
+
+		parseExpression(whileStmt->condition,tree,currentIter);
+
+        parseStatementList(whileStmt->whileBlock, tree, currentIter);
+    }
+}
+
+void parseForStatement(ForStatement *forStmt, Tree *tree, int parentNum)
+{
+    if(forStmt!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"ForStatement",""));
+		int currentIter = tree->end->num;
+
+		addTreeUnit(tree, newTreeUnit(currentIter,forStmt->iterID,"iterator"));
+		parseStatementList(forStmt->stmtList, tree, currentIter);
+		parseRange(forStmt->range, tree, currentIter);
+    }
+}
+
+void parseIfStatement(IfStatement *ifStmt, Tree *tree, int parentNum)
+{
+    if(ifStmt!=NULL)
+	{
+		addTreeUnit(tree, newTreeUnit(parentNum,"IfStatement",""));
+		int currentIter = tree->end->num;
+
+		parseExpression(ifStmt->condition,tree,currentIter);
+		parseStatementList(ifStmt->stmtList, tree, currentIter);
+		parseElse(ifStmt->elseStmt, tree, currentIter);
+		parseElseIfStatementList(ifStmt->elseIfStmtList, tree, currentIter);
+	}
+}
+
+void parseElse(ElseStatement *elseStmt, Tree *tree, int parentNum)
+{
+	if(elseStmt!=NULL)
+	{
+		addTreeUnit(tree, newTreeUnit(parentNum,"ElseStatement",""));
+		int currentIter = tree->end->num;
+
+		parseStatementList(elseStmt->stmtList, tree, currentIter);
+	}
+}
+
+void parseElseIfStatementList(ElseIfStatementList *elseIfStmt, Tree *tree, int parentNum)
+{
+	if(elseIfStmt!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"ElseIfStatementList",""));
+		int currentIter = tree->end->num;
+
+		ElseIfStatement *ds = elseIfStmt->begin;
+		for(; ds!=NULL; ds = ds->nextInList)
+        {
+			parseExpression(ds->condition,tree,currentIter);
+			parseStatementList(ds->stmtList, tree, currentIter);
+        }
+    }
+}
+
+void parseStatementList(StatementList *stmtList, Tree *tree, int parentNum)
+{
+    if(stmtList!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"StatementList",""));
+		int currentIter = tree->end->num;
+
+		Statement *ds = stmtList->begin;
+		for(; ds!=NULL; ds = ds->nextInList)
+        {
+            parseStatement(ds,tree,currentIter);
+        }
+    }
+}
+
+// ------------------------------  Declaration statements ------------------------------ 
+
+void parseRange(Range *range, Tree *tree, int parentNum)
+{
+    addTreeUnit(tree, newTreeUnit(parentNum,"Range",""));
+	int currentIter = tree->end->num;
+
+	if(range!=NULL)
+	{
+		if(range->id!=NULL)
+		{
+			addTreeUnit(tree, newTreeUnit(currentIter,range->id,"iterator"));
+		}
+
+		if(range->startIndex!=NULL)
+		{
+			parseExpression(range->startIndex,tree,currentIter);
+		}
+
+		if(range->lastIndex!=NULL)
+		{
+			parseExpression(range->lastIndex,tree,currentIter);
+		}
+	}
+}
+
+void parseDeclarationStatement(DeclarationStatement *declStmt, Tree *tree, int parentNum)
+{
+	addTreeUnit(tree, newTreeUnit(parentNum,"DeclarationStatement",""));
+	int currentIter = tree->end->num;
+
+	if(declStmt!=NULL)
+	{
+		switch(declStmt->type)
+		{
+			case DT_FUNCTION:
+				programParse(declStmt->stmt.progBlock, tree, currentIter);
+			break;
+
+			case DT_VARIABLE:
+				parseVariableDeclaration(declStmt->stmt.varDeclaration, tree, currentIter);
+			break;
+
+            case DT_TYPE:
+                parseTypeDeclaration(declStmt->stmt.typeDeclaration, tree, currentIter);
+            break;
+		}
+	}
+}
+
+void parseDeclarationStatementList(DeclarationStatementList *declStmtList, Tree *tree, int parentNum)
+{
+	addTreeUnit(tree, newTreeUnit(parentNum,"DeclarationStatementList",""));
+	int currentIter = tree->end->num;
+
+    if(declStmtList!=NULL)
+    {
+		DeclarationStatement *ds = declStmtList->begin;
+        for(; ds!=NULL; ds = ds->nextInList)
+        {
+            parseDeclarationStatement(ds,tree,currentIter);
+        }
+    }
+}
+
+void parseTypeDeclaration(TypeDeclaration *typeDecl, Tree *tree, int parentNum)
+{
+	if(typeDecl!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"TypeDeclaration",""));
+		int currentIter = tree->end->num;
+
+		if(typeDecl->id!=NULL)
+		{
+			addTreeUnit(tree, newTreeUnit(currentIter,typeDecl->id,"typeId"));
+		}
+
+		if(typeDecl->range!=NULL)
+		{
+			parseRange(typeDecl->range,tree,currentIter);
+		}
+
+		addTreeUnit(tree, newTreeUnit(currentIter,variable_type_str(typeDecl->varType),"varType"));
+    }
+}
+
+void parseVariableDeclaration(VariableDeclaration *varDecl, Tree *tree, int parentNum)
+{
+    if(varDecl!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"VariableDeclaration",""));
+		int currentIter = tree->end->num;
+
+		addTreeUnit(tree, newTreeUnit(currentIter,variable_type_str(varDecl->varType),""));
+
+        if(varDecl->isArray)
+        {
+			addTreeUnit(tree, newTreeUnit(currentIter,"Array",""));
+
+            parseRange(varDecl->range, tree, currentIter);
+        }
+
+		if(varDecl->varList!=NULL)
+		{
+			parseVariableList(varDecl->varList, tree, currentIter);
+		}
+    }
+}
+
+void parseVariableDeclarationList(VariableDeclarationList *varDeclList, Tree *tree, int parentNum)
+{
+	if(varDeclList!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"VariableDeclarationList",""));
+		int currentIter = tree->end->num;
+
+		VariableDeclaration *ds = varDeclList->begin;
+		for(; ds!=NULL; ds = ds->nextInList)
+        {
+			parseVariableDeclaration(ds, tree, currentIter);
+        }
+    }
+}
+
+void parseVariableList(VariableList *varList, Tree *tree, int parentNum)
+{
+	if(varList!=NULL)
+	{
+		addTreeUnit(tree, newTreeUnit(parentNum,"VariableList",""));
+		int currentIter = tree->end->num;
+
+		VariableList *ds = varList;
+		for(; ds!=NULL; ds = ds->nextInList)
+        {
+			addTreeUnit(tree, newTreeUnit(currentIter,ds->id,"variable"));
+        }
+	}
+}
+
+
+
 
