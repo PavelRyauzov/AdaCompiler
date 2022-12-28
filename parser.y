@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "tree_nodes.h"
+#include "print_tree.h"
 
 extern int yylex();
 extern int yyparse();
@@ -316,6 +317,7 @@ int main(int argc, char* argv[]) {
 	if(argc>1) {
 		yyin=fopen(argv[1], "r");
     	yyparse();
+		TestPrint();
 		fclose (yyin);
 	}
   
