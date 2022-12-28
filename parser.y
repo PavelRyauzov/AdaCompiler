@@ -16,6 +16,8 @@ ProgramList *root;
 Expression *createExpression(ExprType type, Expression *left, Expression *right);
 Expression *createSimpleExpression(ExprType type, Value val);
 Expression *createExpressionWithList(ExprType type, Value val, ExpressionList *exprList);
+ExpressionList *createExpressionList(Expression *expr);
+ExpressionList *appendExpressionToList(ExpressionList *list, Expression *expr);
 
 Statement *createStatement(StmtType type, StmtValue value);
 WhileStatement *createWhile(Expression *condition, StatementList *whileBlock);
@@ -282,12 +284,12 @@ expression : expression '+' expression {$$ = createExpression(ET_PLUS, $1, $3); 
 		   | ID '\'' LENGTH {$$ = createSimpleExpression(ET_LENGTH_ARR_ATTR, (Value){.string_val=$1});}
 		   ;
 
-expression_list : 	/* empty */  	
-				| expression_listE		
+expression_list : 	/* empty */  	{$$ = NULL;}
+				| expression_listE {$$ = $1;}
 				;
 
-expression_listE : expression  		
-				 | expression_list ',' expression  
+expression_listE : expression {$$ = createExpressionList($1);}
+				 | expression_list ',' expression {$$ = appendExpressionToList($1,$3);}
 				 ;
 %%
 
@@ -353,6 +355,24 @@ Expression *createExpressionWithList(ExprType type, Value value, ExpressionList 
 	result->nextInList = NULL;
 
 	return result;
+}
+
+ExpressionList *createExpressionList(Expression *expr)
+{
+	ExpressionList *result = (ExpressionList *)malloc(sizeof(ExpressionList));
+
+	result->begin = expr;
+	result->end = expr;
+
+	return result;
+}
+
+ExpressionList *appendExpressionToList(ExpressionList *list, Expression *expr)
+{
+	list->end->nextInList = expr;
+	list->end = expr;
+
+	return list;
 }
 
 // ------------------------------  Statement ------------------------------ 
