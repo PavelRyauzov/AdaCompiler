@@ -1,3 +1,5 @@
+#pragma once
+
 typedef union StmtValue StmtValue;
 typedef union DeclarationStmtValue DeclarationStmtValue;
 typedef union Value Value;

@@ -1,0 +1,1 @@
+dot -Tpng -O "./build/tree_img.txt"
