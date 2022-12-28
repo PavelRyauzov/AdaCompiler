@@ -92,7 +92,6 @@ enum VarType
 	VT_STRING,
 	VT_CHARACTER,
 	VT_ARRAY,
-	VT_VOID
 };
 
 enum DeclarationType
@@ -132,7 +131,10 @@ struct ProgramBlock
 };
 
 struct FuncReturnType {
+	int isType;
 	char* typeId;
+
+	int isVarType;
 	enum VarType varType;
 };
 
@@ -146,7 +148,7 @@ struct DeclarationStatement
 {
 	DeclarationType type;
 
-	DeclarationStmtValue declarationStmtValue;
+	DeclarationStmtValue stmt;
 
 	DeclarationStatement *nextInList;
 };
@@ -159,12 +161,12 @@ struct VariableDeclarationList
 
 struct VariableDeclaration
 {
-	enum VarType type;
+	enum VarType varType;
 	VariableList *varList;
 
 	// ====== //
 	int isType;
-    char* typeId;
+    char *typeId;
 	// ====== //
 
 	int isArray;
@@ -177,7 +179,7 @@ struct TypeDeclaration
 {
 	char *id;
 	Range *range;
-	enum VarType type;
+	enum VarType varType;
 };
 
 struct VariableList

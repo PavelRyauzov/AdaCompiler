@@ -29,7 +29,24 @@ ElseIfStatement *createElseIf(Expression *condition, StatementList *stmtList);
 ElseIfStatementList *createElseIfStatementList(ElseIfStatement *stmt);
 ElseIfStatementList *appendElseIfToList(ElseIfStatementList *list, ElseIfStatement *stmt);
 AssigmentStatement *createAssigmentStmt(Expression *left, Expression *right);
+StatementList *createStatementList(Statement *stmt);
+StatementList *appendStatementToList(StatementList *list, Statement *stmt);
 
+Range *createRange(Expression *startIndex, Expression *lastIndex, char* id);
+DeclarationStatement *createDeclarationStatement(DeclarationType type, DeclarationStmtValue stmt);
+DeclarationStatementList *createDeclarationStatementList(DeclarationStatement *stmt);
+DeclarationStatementList *appendDeclarationStatementToList(DeclarationStatementList *list, DeclarationStatement *stmt);
+VariableDeclaration *createVariableDeclaration(VarType varType, VariableList *varList, Range *range, char *typeId);
+VariableDeclarationList *createVariableDeclarationList(VariableDeclaration *varDecl);
+VariableDeclarationList *appendVariableDeclarationList(VariableDeclarationList *list, VariableDeclaration *varDecl);
+VariableList *createVariableList(char* id);
+VariableList *appendToVariableList(VariableList *list, char* id);
+TypeDeclaration *createTypeDeclaration(char *typeId, Range *range, VarType varType);
+FuncReturnType *createFuncReturnType(char *typeId, VarType varType);
+
+ProgramBlock *createProgramBlock(char *id, DeclarationStatementList *declarationSection, StatementList *performSection, VariableDeclarationList *args, FuncReturnType *returnType);
+ProgramList *createProgramList(ProgramBlock *progBlock);
+ProgramList *appendProgramToList(ProgramList *list, ProgramBlock *progBlock);
 %}
 
 %union { 
@@ -147,28 +164,28 @@ AssigmentStatement *createAssigmentStmt(Expression *left, Expression *right);
 %start program
 
 %%
-program : program_list  
+program : program_list {$$ = root = $1;}  
 		;
 
-program_list : program_block  
-			 | program_list program_block  
+program_list : program_block { $$ = createProgramList($1); }
+			 | program_list program_block { $$ = appendProgramToList($1,$2); }
 		     ;
 
-program_block : PROCEDURE ID IS BEGIN_TOKEN statement_list END ID ';'  
-			  | PROCEDURE ID IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';'  
-			  | PROCEDURE ID '(' variable_declaration_list ')' IS BEGIN_TOKEN statement_list END ID ';'  
-			  | PROCEDURE ID '(' variable_declaration_list ')' IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';'  
+program_block : PROCEDURE ID IS BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,0,$5,0,0);} 
+			  | PROCEDURE ID IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,$4,$6,0,0);}  
+			  | PROCEDURE ID '(' variable_declaration_list ')' IS BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,0,$8,$4,0);} 
+			  | PROCEDURE ID '(' variable_declaration_list ')' IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,$7,$9,$4,0);}
 
-			  | FUNCTION ID RETURN function_return_type IS BEGIN_TOKEN statement_list END ID ';'  
-			  | FUNCTION ID RETURN function_return_type IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';'  
-			  | FUNCTION ID '(' variable_declaration_list ')' RETURN function_return_type IS BEGIN_TOKEN statement_list END ID ';'  
-			  | FUNCTION ID '(' variable_declaration_list ')' RETURN function_return_type IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';'  
+			  | FUNCTION ID RETURN function_return_type IS BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,0,$7,0,$4);}
+			  | FUNCTION ID RETURN function_return_type IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,$6,$8,0,$4);}
+			  | FUNCTION ID '(' variable_declaration_list ')' RETURN function_return_type IS BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,0,$10,$4,$7);}
+			  | FUNCTION ID '(' variable_declaration_list ')' RETURN function_return_type IS declaration_statement_list BEGIN_TOKEN statement_list END ID ';' {$$ = createProgramBlock($2,$9,$11,$4,$7);} 
 
-			  | error  
+			  | error  {$$ = NULL;}
 			  ;
 
-statement_list : statement  					
-			   | statement_list statement  
+statement_list : statement {$$ = createStatementList($1);}  					
+			   | statement_list statement {$$ = appendStatementToList($1,$2);}  
 			   ;
 
 statement : call_function_statement {$$ = createStatement(ST_CALL_FUNC, (StmtValue){.callFuncStmt=$1});}  	
@@ -183,33 +200,33 @@ statement : call_function_statement {$$ = createStatement(ST_CALL_FUNC, (StmtVal
 /* expression_statement : expression ';'
 					 ; */
 
-declaration_statement_list : declaration_statement  
-						   | declaration_statement_list declaration_statement  
+declaration_statement_list : declaration_statement {$$ = createDeclarationStatementList($1);}
+						   | declaration_statement_list declaration_statement {$$ = appendDeclarationStatementToList($1, $2);}
 						   ;
 
-declaration_statement:	variable_declaration ';'  
-					 |  type_declaration ';'  
-					 |	program_block  
+declaration_statement:	variable_declaration ';'  {$$ = createDeclarationStatement(DT_VARIABLE, (DeclarationStmtValue){.varDeclaration=$1});}
+					 |  type_declaration ';'  {$$ = createDeclarationStatement(DT_TYPE, (DeclarationStmtValue){.typeDeclaration=$1});}
+					 |	program_block  {$$ = createDeclarationStatement(DT_FUNCTION, (DeclarationStmtValue){.progBlock=$1});}
 					 ;
 
-variable_declaration_list : variable_declaration  
-						  | variable_declaration_list ';' variable_declaration  
+variable_declaration_list : variable_declaration  {$$ = createVariableDeclarationList($1);}
+						  | variable_declaration_list ';' variable_declaration {$$ = appendVariableDeclarationList($1,$3);}
 						  ;
 
-variable_declaration : variable_list ':' variable_type   	
-					 | variable_list ':' ID	 
-					 | variable_list ':' ARRAY '(' range ')' OF variable_type  
+variable_declaration : variable_list ':' variable_type {$$ = createVariableDeclaration($3,$1,0,0);} 	
+					 | variable_list ':' ID	 {$$ = createVariableDeclaration(0,$1,0,$3);}
+					 | variable_list ':' ARRAY '(' range ')' OF variable_type  {$$ = createVariableDeclaration($8,$1,$5,0);}
 					 ;
 
-type_declaration : TYPE ID IS ARRAY '(' range ')' OF variable_type  
+type_declaration : TYPE ID IS ARRAY '(' range ')' OF variable_type  {$$ = createTypeDeclaration($2, $6, $9);}
 				 ;
 
-function_return_type : variable_type  
-					 | ID  
+function_return_type : variable_type  {$$ = createFuncReturnType(0, $1);}
+					 | ID  {$$ = createFuncReturnType($1, 0);}
 					 ;
 
-variable_list : ID  
-			  | variable_list ',' ID  
+variable_list : ID {$$ = createVariableList($1);}
+			  | variable_list ',' ID {$$ = appendToVariableList($1, $3);}
 			  ;
 
 variable_type : INTEGER    {$$ = VT_INTEGER;}
@@ -225,17 +242,17 @@ while_statement : WHILE expression LOOP statement_list END LOOP ';'	 {$$ = creat
 for_statement : FOR ID IN range LOOP statement_list END LOOP ';' {$$ = createFor($2,$4,$6);} 
 			  ;
 
-range : expression DOUBLE_DOT expression  
-	  |	ID '\'' RANGE  			
+range : expression DOUBLE_DOT expression {$$ = createRange($1, $3, 0);}
+	  |	ID '\'' RANGE {$$ = createRange(0, 0, $1);} 			
 	  ;
 
 call_function_statement : ID '(' expression_list ')' ';' {$$ = createCallFunction($1, $3);}
 
 if_statement : IF expression THEN statement_list elsif_statement_list else_statement END IF ';'	 {$$ = createIf($2, $4, $5, $6);}
-			 | IF expression THEN statement_list else_statement END IF ';' {$$ = createIf($2, $4, NULL, $5);}	 
+			 | IF expression THEN statement_list else_statement END IF ';' {$$ = createIf($2, $4, 0, $5);}	 
 			 ;
 
-else_statement : 	/* empty */ 		  {$$ = NULL;}
+else_statement : 	/* empty */ 		  {$$ = 0;}
 			   | ELSE statement_list	  {$$ = createElse($2);}
 			   ;
 
@@ -261,9 +278,9 @@ expression : expression '+' expression {$$ = createExpression(ET_PLUS, $1, $3); 
 		   | expression '*' expression {$$ = createExpression(ET_MULT, $1, $3);}
 	       | expression '/' expression {$$ = createExpression(ET_DIV, $1, $3);}
 		   | expression '&' expression {$$ = createExpression(ET_CONCAT, $1, $3);}
-		   | '+' expression %prec UPLUS	{$$ = createExpression(ET_PLUS, NULL, $2);}
-		   | '-' expression %prec UMINUS {$$ = createExpression(ET_MINUS, NULL, $2);}
-		   | NOT expression {$$ = createExpression(ET_NOT, NULL, $2);}
+		   | '+' expression %prec UPLUS	{$$ = createExpression(ET_PLUS, 0, $2);}
+		   | '-' expression %prec UMINUS {$$ = createExpression(ET_MINUS, 0, $2);}
+		   | NOT expression {$$ = createExpression(ET_NOT, 0, $2);}
 		   | expression '<' expression {$$ = createExpression(ET_LESSER, $1, $3);}
 		   | expression '>' expression {$$ = createExpression(ET_GREATER, $1, $3);}
 		   | expression LESSER_EQUAL expression	{$$ = createExpression(ET_LESSER_EQUAL, $1, $3);} 
@@ -284,7 +301,7 @@ expression : expression '+' expression {$$ = createExpression(ET_PLUS, $1, $3); 
 		   | ID '\'' LENGTH {$$ = createSimpleExpression(ET_LENGTH_ARR_ATTR, (Value){.string_val=$1});}
 		   ;
 
-expression_list : 	/* empty */  	{$$ = NULL;}
+expression_list : 	/* empty */  	{$$ = 0;}
 				| expression_listE {$$ = $1;}
 				;
 
@@ -321,8 +338,8 @@ Expression *createExpression(ExprType type, Expression *left, Expression *right)
 	result->left = left;
 	result->right = right;
 
-	result->exprList = NULL;
-	result->nextInList = NULL;
+	result->exprList = 0;
+	result->nextInList = 0;
 
 	return result;
 }
@@ -334,10 +351,10 @@ Expression *createSimpleExpression(ExprType type, Value value)
 	result->type = type;
 	result->value = value;
 
-	result->exprList = NULL;
-	result->right = NULL;
-	result->left = NULL;
-	result->nextInList = NULL;
+	result->exprList = 0;
+	result->right = 0;
+	result->left = 0;
+	result->nextInList = 0;
 
 	return result;
 }
@@ -350,9 +367,9 @@ Expression *createExpressionWithList(ExprType type, Value value, ExpressionList 
 	result->value = value;
 	result->exprList = exprList;
 
-	result->right = NULL;
-	result->left = NULL;
-	result->nextInList = NULL;
+	result->right = 0;
+	result->left = 0;
+	result->nextInList = 0;
 
 	return result;
 }
@@ -382,7 +399,7 @@ Statement *createStatement(StmtType type, StmtValue value)
 
 	result->type = type;
 	result->stmtValue = value;
-	result->nextInList = NULL;
+	result->nextInList = 0;
 
 	return result;
 }
@@ -435,7 +452,7 @@ ElseIfStatement *createElseIf(Expression *condition, StatementList *stmtList)
 
 	result->condition = condition;
 	result->stmtList = stmtList;
-	result->nextInList = NULL;
+	result->nextInList = 0;
 
 	return result;
 }
@@ -476,12 +493,177 @@ CallFunctionStatement *createCallFunction(char *funcId, ExpressionList *args)
 	return result;
 }
 
-// ------------------------------  rule ------------------------------ 
+StatementList *createStatementList(Statement *stmt)
+{
+	StatementList *result = (StatementList *)malloc(sizeof(StatementList));
+
+	result->begin = stmt;
+	result->end = stmt;
+	return result;
+}
+
+StatementList *appendStatementToList(StatementList *list, Statement *stmt)
+{
+	list->end->nextInList = stmt;
+	list->end = stmt;
+	return list;
+}
+
+// ------------------------------  Declaration statements ------------------------------ 
+Range *createRange(Expression *startIndex, Expression *lastIndex, char* id)
+{
+	struct Range *result = (Range *)malloc(sizeof(Range));
+
+	result->startIndex = startIndex;
+	result->lastIndex = lastIndex;
+	result->id = id;
+	return result;
+}
+
+DeclarationStatement *createDeclarationStatement(DeclarationType type, DeclarationStmtValue stmt)
+{
+	DeclarationStatement *result = (DeclarationStatement *)malloc(sizeof(DeclarationStatement));
+
+	result->type = type;
+	result->stmt = stmt;
+	result->nextInList = 0;
+
+	return result;
+}
+
+DeclarationStatementList *createDeclarationStatementList(DeclarationStatement *stmt)
+{
+	DeclarationStatementList *result = (DeclarationStatementList *)malloc(sizeof(DeclarationStatementList));
+
+	result->begin = stmt;
+	result->end = stmt;
+
+	return result;
+}
+
+DeclarationStatementList *appendDeclarationStatementToList(DeclarationStatementList *list, DeclarationStatement *stmt)
+{
+	list->end->nextInList = stmt;
+	list->end = stmt;
+	return list;
+}
+
+VariableDeclaration *createVariableDeclaration(VarType varType, VariableList *varList, Range *range, char *typeId)
+{
+	VariableDeclaration *result = (VariableDeclaration *)malloc(sizeof(VariableDeclaration));
+
+	result->varType = varType;
+	result->varList = varList;
+
+	result->isArray = range != 0;
+	result->range=range;
+
+	result->isType = typeId != 0;
+	result->typeId = typeId;
+
+	result->nextInList = 0;
+
+	return result;
+}
+
+VariableDeclarationList *createVariableDeclarationList(VariableDeclaration *varDecl)
+{
+	VariableDeclarationList *result = (VariableDeclarationList *)malloc(sizeof(VariableDeclarationList));
+
+	result->begin = varDecl;
+	result->end = varDecl;
+
+	return result;
+}
+
+VariableDeclarationList *appendVariableDeclarationList(VariableDeclarationList *list, VariableDeclaration *varDecl)
+{
+	list->end->nextInList = varDecl;
+	list->end = varDecl;
+
+	return list;
+}
+
+VariableList *createVariableList(char* id)
+{
+	VariableList *result = (VariableList *)malloc(sizeof(VariableList));
+
+	result->id = id;
+	result->end = result;
+	result->nextInList = 0;
+
+	return result;
+}
+
+VariableList *appendToVariableList(VariableList *list, char* id)
+{
+	VariableList *result = (VariableList *)malloc(sizeof(VariableList));
+
+	result->id = id;
+	result->nextInList = 0;
+
+	list->end->nextInList = result;
+	list->end = result;
+
+	return list;
+}
+
+TypeDeclaration *createTypeDeclaration(char *typeId, Range *range, VarType varType)
+{
+	TypeDeclaration *result = (TypeDeclaration *)malloc(sizeof(TypeDeclaration));
+
+	result->id = typeId;
+	result->range = range;
+	result->varType = varType;
+
+	return result;
+}
+
+FuncReturnType *createFuncReturnType(char *typeId, VarType varType)
+{
+	FuncReturnType *result = (FuncReturnType *)malloc(sizeof(FuncReturnType));
+
+	result->isType = typeId != 0;
+	result->typeId = typeId;
+
+	result->isVarType = varType != 0;
+	result->varType=varType;
+
+	return result;
+}
 
 
-// ------------------------------  rule ------------------------------ 
+// ------------------------------  Program block ------------------------------ 
 
+ProgramBlock *createProgramBlock(char *id, DeclarationStatementList *declarationSection, StatementList *performSection, VariableDeclarationList *args, FuncReturnType *returnType)
+{
+	ProgramBlock *result = (ProgramBlock *)malloc(sizeof(ProgramBlock));
 
-// ------------------------------  rule ------------------------------ 
+	result->id = id;
+	result->declarationSection = declarationSection;
+	result->performSection = performSection;
+	result->funcArgs = args;
+	result->returnType = returnType;
 
-// ------------------------------  rule ------------------------------ 
+	result->nextInList = NULL;
+
+	return result;
+}
+
+ProgramList *createProgramList(ProgramBlock *progBlock)
+{
+	ProgramList *result = (ProgramList *)malloc(sizeof(ProgramList));
+
+	result->begin = progBlock;
+	result->end = progBlock;
+
+	return result;
+}
+
+ProgramList *appendProgramToList(ProgramList *list, ProgramBlock *progBlock)
+{
+	list->end->nextInList = progBlock;
+	list->end = progBlock;
+
+	return list;
+}
