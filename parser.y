@@ -17,6 +17,16 @@ Expression *createExpression(ExprType type, Expression *left, Expression *right)
 Expression *createSimpleExpression(ExprType type, Value val);
 Expression *createExpressionWithList(ExprType type, Value val, ExpressionList *exprList);
 
+Statement *createStatement(StmtType type, StmtValue value);
+WhileStatement *createWhile(Expression *condition, StatementList *whileBlock);
+ForStatement *createFor(char *iterID, Range *countIterations, StatementList *forBlock);
+CallFunctionStatement *createCallFunction(char *funcId, ExpressionList *args);
+IfStatement *createIf(Expression *condition, StatementList *stmtList, ElseIfStatementList *elseIfStmtList, ElseStatement *elseStmt);
+ElseStatement *createElse(StatementList *stmtList);
+ElseIfStatement *createElseIf(Expression *condition, StatementList *stmtList);
+ElseIfStatementList *createElseIfStatementList(ElseIfStatement *stmt);
+ElseIfStatementList *appendElseIfToList(ElseIfStatementList *list, ElseIfStatement *stmt);
+AssigmentStatement *createAssigmentStmt(Expression *left, Expression *right);
 
 %}
 
@@ -37,6 +47,7 @@ Expression *createExpressionWithList(ExprType type, Value val, ExpressionList *e
 	AssigmentStatement *assigStmt;
 	ForStatement *forStmt;
 	IfStatement *ifStmt;
+	CallFunctionStatement *callFuncStmt;
 	ElseStatement *elseStmt;
 	ElseIfStatement *elseIfStmt;
 	ElseIfStatementList *elseIfStmtList;
@@ -60,6 +71,7 @@ Expression *createExpressionWithList(ExprType type, Value val, ExpressionList *e
 %type <assigStmt> assigment_statement
 %type <elseIfStmt> elsif_statement
 %type <elseStmt> else_statement
+%type <callFuncStmt> call_function_statement
 %type <ifStmt> if_statement
 %type <elseIfStmtList> elsif_statement_list
 %type <forStmt> for_statement
@@ -157,13 +169,13 @@ statement_list : statement
 			   | statement_list statement  
 			   ;
 
-statement : ID '(' expression_list ')' ';'	 	
-		  | while_statement	 		
-		  | for_statement  			
-		  | if_statement  			
-		  | return_statement  		
-		  | empty_statement  			
-		  | assigment_statement  		
+statement : call_function_statement {$$ = createStatement(ST_CALL_FUNC, (StmtValue){.callFuncStmt=$1});}  	
+		  | while_statement {$$ = createStatement(ST_WHILE, (StmtValue){.whileStmt=$1});}
+		  | for_statement {$$ = createStatement(ST_FOR, (StmtValue){.forStmt=$1});}  			
+		  | if_statement {$$ = createStatement(ST_IF, (StmtValue){.ifStmt=$1});} 			
+		  | return_statement {$$ = $1;} 		
+		  | empty_statement {$$ = $1;}  			
+		  | assigment_statement {$$ = createStatement(ST_ASSIGN, (StmtValue){.assignStmt=$1});} 		
 		  ;
 
 /* expression_statement : expression ';'
@@ -205,39 +217,41 @@ variable_type : INTEGER    {$$ = VT_INTEGER;}
 			  | BOOLEAN	   {$$ = VT_BOOLEAN;}
 			  ;
 
-while_statement : WHILE expression LOOP statement_list END LOOP ';'	 
+while_statement : WHILE expression LOOP statement_list END LOOP ';'	 {$$ = createWhile($2, $4);}
 				;
 
-for_statement : FOR ID IN range LOOP statement_list END LOOP ';'  
+for_statement : FOR ID IN range LOOP statement_list END LOOP ';' {$$ = createFor($2,$4,$6);} 
 			  ;
 
 range : expression DOUBLE_DOT expression  
 	  |	ID '\'' RANGE  			
 	  ;
 
-if_statement : IF expression THEN statement_list elsif_statement_list else_statement END IF ';'	 
-			 | IF expression THEN statement_list else_statement END IF ';'	 
+call_function_statement : ID '(' expression_list ')' ';' {$$ = createCallFunction($1, $3);}
+
+if_statement : IF expression THEN statement_list elsif_statement_list else_statement END IF ';'	 {$$ = createIf($2, $4, $5, $6);}
+			 | IF expression THEN statement_list else_statement END IF ';' {$$ = createIf($2, $4, NULL, $5);}	 
 			 ;
 
-else_statement : 	/* empty */ 		 
-			   | ELSE statement_list	 
+else_statement : 	/* empty */ 		  {$$ = NULL;}
+			   | ELSE statement_list	  {$$ = createElse($2);}
 			   ;
 
-elsif_statement : ELSIF expression THEN statement_list  	
+elsif_statement : ELSIF expression THEN statement_list {$$ = createElseIf($2, $4);}  	
 				;
 
-elsif_statement_list : elsif_statement  			
-				     | elsif_statement_list elsif_statement	 
+elsif_statement_list : elsif_statement {$$ = createElseIfStatementList($1);}		
+				     | elsif_statement_list elsif_statement {$$ = appendElseIfToList($1, $2);}	 
 				     ;
 
-return_statement : RETURN expression ';'  
-				 | RETURN ';'  
+return_statement : RETURN expression ';' {$$ = createStatement(ST_RETURN, (StmtValue){.exprStmt=$2});}
+				 | RETURN ';'            {$$ = createStatement(ST_RETURN, (StmtValue){});}
 			     ;
 
-assigment_statement : expression ASSIGNMENT expression ';'  
+assigment_statement : expression ASSIGNMENT expression ';'  {$$ = createAssigmentStmt($1, $3);}
 			        ;
 
-empty_statement : NIL ';'  
+empty_statement : NIL ';' {$$ = createStatement(ST_NULL, (StmtValue){});}
 				;
 
 expression : expression '+' expression {$$ = createExpression(ET_PLUS, $1, $3); }
@@ -341,8 +355,106 @@ Expression *createExpressionWithList(ExprType type, Value value, ExpressionList 
 	return result;
 }
 
-// ------------------------------  rule ------------------------------ 
+// ------------------------------  Statement ------------------------------ 
+Statement *createStatement(StmtType type, StmtValue value)
+{
+	Statement *result = (Statement *)malloc(sizeof(Statement));
 
+	result->type = type;
+	result->stmtValue = value;
+	result->nextInList = NULL;
+
+	return result;
+}
+
+WhileStatement *createWhile(Expression *condition, StatementList *whileBlock)
+{
+	WhileStatement *result = (WhileStatement *)malloc(sizeof(WhileStatement));
+
+	result->condition = condition;
+	result->whileBlock = whileBlock;
+
+	return result;
+}
+
+ForStatement *createFor(char *iterID, Range *countIterations, StatementList *forBlock)
+{
+	ForStatement *result = (ForStatement *)malloc(sizeof(ForStatement));
+
+	result->iterID = iterID;
+	result->range = countIterations;
+	result->stmtList = forBlock;
+
+	return result;
+}
+
+IfStatement *createIf(Expression *condition, StatementList *stmtList, ElseIfStatementList *elseIfStmtList, ElseStatement *elseStmt)
+{
+	IfStatement *result = (IfStatement *)malloc(sizeof(IfStatement));
+
+	result->condition = condition;
+	result->stmtList = stmtList;
+	result->elseIfStmtList = elseIfStmtList;
+	result->elseStmt = elseStmt;
+
+	return result;
+}
+
+ElseStatement *createElse(StatementList *stmtList)
+{
+	ElseStatement *result = (ElseStatement *)malloc(sizeof(ElseStatement));
+
+	result->stmtList = stmtList;
+
+	return result;
+}
+
+ElseIfStatement *createElseIf(Expression *condition, StatementList *stmtList)
+{
+	ElseIfStatement *result = (ElseIfStatement *)malloc(sizeof(ElseIfStatement));
+
+	result->condition = condition;
+	result->stmtList = stmtList;
+	result->nextInList = NULL;
+
+	return result;
+}
+
+ElseIfStatementList *createElseIfStatementList(ElseIfStatement *stmt)
+{
+	ElseIfStatementList *result = (ElseIfStatementList *)malloc(sizeof(ElseIfStatementList));
+
+	result->begin = stmt;
+	result->end = stmt;
+
+	return result;
+}
+
+ElseIfStatementList *appendElseIfToList(ElseIfStatementList *list, ElseIfStatement *stmt)
+{
+	list->end->nextInList = stmt;
+	list->end = stmt;
+	return list;
+}
+
+AssigmentStatement *createAssigmentStmt(Expression *left, Expression *right)
+{
+	AssigmentStatement *result = (AssigmentStatement *)malloc(sizeof(AssigmentStatement));
+
+	result->left = left;
+	result->right = right;
+
+	return result;
+}
+
+CallFunctionStatement *createCallFunction(char *funcId, ExpressionList *args) 
+{
+	CallFunctionStatement *result = (CallFunctionStatement *)malloc(sizeof(CallFunctionStatement));
+	result->funcId = funcId;
+	result->args = args;
+	
+	return result;
+}
 
 // ------------------------------  rule ------------------------------ 
 

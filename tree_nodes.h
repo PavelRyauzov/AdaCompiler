@@ -16,6 +16,7 @@ typedef struct VariableDeclarationList VariableDeclarationList;
 typedef struct VariableDeclaration VariableDeclaration;
 typedef struct TypeDeclaration TypeDeclaration;
 typedef struct VariableList VariableList;
+typedef struct CallFunctionStatement CallFunctionStatement;
 typedef struct IfStatement IfStatement;
 typedef struct ElseStatement ElseStatement;
 typedef struct ElseIfStatement ElseIfStatement;
@@ -39,6 +40,7 @@ union Value
 
 union StmtValue 
 {
+	CallFunctionStatement *callFuncStmt;
 	WhileStatement *whileStmt;
 	AssigmentStatement *assignStmt;
 	ForStatement *forStmt;
@@ -102,7 +104,7 @@ enum DeclarationType
 
 enum StmtType
 {
-	ST_EXPRESSION,
+	ST_CALL_FUNC,
 	ST_RETURN,
 	ST_NULL,
 	ST_WHILE,
@@ -186,6 +188,12 @@ struct VariableList
 	VariableList *end;
 };
 
+struct CallFunctionStatement
+{
+	char *funcId;
+	ExpressionList *args;
+};
+
 struct IfStatement
 {
 	Expression *condition;
@@ -250,13 +258,6 @@ struct Statement
 	enum StmtType type;
 
 	union StmtValue stmtValue;
-
-	// ----- fix
-	////Expression *exprStmt;
-	// =======
-	char *callFuncId;
-	ExpressionList *callFuncArgs;
-	// --------
 
 	Statement *nextInList; // statement is part of list
 };
