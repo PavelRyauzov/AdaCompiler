@@ -284,7 +284,7 @@ void parseStatement(Statement *stmt, Tree *tree, int parentNum)
 		switch(stmt->type)
 		{
 			case ST_CALL_FUNC:
-				parseExpression(stmt->stmtValue.exprStmt,tree,currentIter);
+				parseCallFuncStatement(stmt->stmtValue.callFuncStmt, tree, currentIter);
 			break;
 
 			case ST_RETURN:
@@ -312,6 +312,20 @@ void parseStatement(Statement *stmt, Tree *tree, int parentNum)
 				parseExpression(stmt->stmtValue.assignStmt->right,tree,currentIter);
 			break;
 		}
+	}
+}
+
+void parseCallFuncStatement(CallFunctionStatement *callFuncStmt, Tree *tree, int parentNum)
+{
+	if (callFuncStmt!=NULL) 
+	{
+		addTreeUnit(tree, newTreeUnit(parentNum, "CallFunctionStatement", ""));
+		int currentIter = tree->end->num;
+
+		addTreeUnit(tree, newTreeUnit(currentIter,callFuncStmt->funcId,""));
+		
+
+		parseExpressionList(callFuncStmt->args, tree, currentIter);
 	}
 }
 

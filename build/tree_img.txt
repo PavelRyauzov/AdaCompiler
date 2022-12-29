@@ -48,18 +48,19 @@ digraph Program {
 47  [label="1"];
 48  [label="ET_INTEGER"];
 49  [label="5"];
-50  [label=":="];
-51  [label="ET_ID"];
-52  [label="C"];
-53  [label="ET_ARRAY_OR_FUNC"];
-54  [label="Display_Result"];
-55  [label="Return type"];
-56  [label="void"];
+50  [label="ST_CALL_FUNC"];
+51  [label="CallFunctionStatement"];
+52  [label="Display_Result"];
+53  [label="ExpressionList"];
+54  [label="ET_INTEGER"];
+55  [label="10"];
+56  [label="Return type"];
+57  [label="void"];
 
 1->2[label="Function"];
 2->3[label=""];
 2->28[label=""];
-2->55[label=""];
+2->56[label=""];
 3->4[label=""];
 3->11[label=""];
 3->20[label=""];
@@ -106,10 +107,11 @@ digraph Program {
 45->48[label="Expression"];
 46->47[label="ET_INTEGER"];
 48->49[label="ET_INTEGER"];
-50->51[label="Expression"];
-50->53[label="Expression"];
-51->52[label="ET_ID"];
-53->54[label="ET_ARRAY_OR_FUNC"];
-55->56[label=""];
+50->51[label=""];
+51->52[label=""];
+51->53[label=""];
+53->54[label="Expression"];
+54->55[label="ET_INTEGER"];
+56->57[label=""];
 
 }

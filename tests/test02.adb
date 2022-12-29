@@ -16,5 +16,5 @@ begin
 
     -- test comment
 
-    C := Display_Result();
+    Display_Result();
 end Show_Increment;

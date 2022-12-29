@@ -26,6 +26,7 @@ void parseExpression(Expression *expr, Tree *tree, int parentNum);
 void parseExpressionList(ExpressionList *exprList, Tree *tree, int parentNum);
 
 void parseStatement(Statement *stmt, Tree *tree, int parentNum);
+void parseCallFuncStatement(CallFunctionStatement *callFuncStmt, Tree *tree, int parentNum);
 void parseWhileStatement(WhileStatement *whileStmt, Tree *tree, int parentNum);
 void parseForStatement(ForStatement *forStmt, Tree *tree, int parentNum);
 void parseIfStatement(IfStatement *ifStmt, Tree *tree, int parentNum);
