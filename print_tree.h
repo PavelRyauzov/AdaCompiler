@@ -19,7 +19,8 @@ struct Tree
 };
 
 void printTree(ProgramList *pr);
-void programParse(ProgramBlock *prog, Tree *tree, int parentNum);
+void programParse(ProgramList *progList, Tree *tree, int parentNum);
+void programBlockParse(ProgramBlock *prog, Tree *tree, int parentNum);
 void parseFuncReturnType(FuncReturnType *frt, Tree *tree, int parentNum);
 
 void parseExpression(Expression *expr, Tree *tree, int parentNum);

@@ -1,20 +1,38 @@
+procedure Hello is
+    Var1 : INTEGER;
+	Var2 : INTEGER;
+    Var3 : INTEGER;
+	
+begin
+    null;
+end Hello;
+
+procedure Proc
+ (Var1 : Integer;
+  Var2 : Integer;
+  Var3 : Integer)
+is
+begin
+   Var3 := Var3 + 1;
+end Proc;
+
+function Func (Var : Integer) return Integer
+is
+begin
+   return Var + 1;
+end Func;
+
 procedure Show_Increment is
     A, B, C : Integer;
-    type Grade is array(0..100) of Float;   
-    function Display_Result return Integer is
+
+    procedure Display_Result is
     begin
-        return 5;
+        null;
     end Display_Result;
 
 begin
     A := 10;
     B := 3;
-
-    for Iter in 1..5 loop
-		null;
-	end loop;
-
-    -- test comment
-
+    C := Increment_By (A, B);
     Display_Result();
 end Show_Increment;

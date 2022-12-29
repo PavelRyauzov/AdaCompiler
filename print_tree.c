@@ -112,7 +112,9 @@ void printTree(ProgramList *pr)
 		addTreeUnit(tree, newTreeUnit(0,"Program", ""));
 		int rootNode = tree->end->num;
 
-        programParse(pr->end, tree, rootNode);
+
+		programParse(pr, tree, rootNode);
+        // programBlockParse(pr->end, tree, rootNode);
 
 		printf("digraph Program {\n");
 
@@ -143,7 +145,22 @@ void printTree(ProgramList *pr)
     }
 }
 
-void programParse(ProgramBlock *prog, Tree *tree, int parentNum)
+void programParse(ProgramList *progList, Tree *tree, int parentNum)
+{
+	 if(progList!=NULL)
+    {
+		addTreeUnit(tree, newTreeUnit(parentNum,"ProgramBlockList",""));
+		int currentIter = tree->end->num;
+
+		ProgramBlock *pl = progList->begin;
+		for(; pl!=NULL; pl = pl->nextInList)
+        {
+            programBlockParse(pl,tree,currentIter);
+        }
+    }
+}
+
+void programBlockParse(ProgramBlock *prog, Tree *tree, int parentNum)
 {
     if(prog!=NULL)
     {
@@ -447,7 +464,7 @@ void parseDeclarationStatement(DeclarationStatement *declStmt, Tree *tree, int p
 		switch(declStmt->type)
 		{
 			case DT_FUNCTION:
-				programParse(declStmt->stmt.progBlock, tree, currentIter);
+				programBlockParse(declStmt->stmt.progBlock, tree, currentIter);
 			break;
 
 			case DT_VARIABLE:
